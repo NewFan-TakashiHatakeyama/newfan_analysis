@@ -1,0 +1,44 @@
+services:
+  web:
+    container_name: web
+    image: nginx:alpine
+    depends_on:
+      # `app`サービス（コンテナ）が先に起動している必要があるので`depends_on`を指定しておく
+      - app
+    ports:
+      # ポートマッピング： "ホストOSのポート:コンテナ(Nginx)のポート"
+      - "80:80"
+    volumes:
+      # volumeマウント： "ホストOSのパス:コンテナにおけるパス"
+      - ./web/conf.d:/etc/nginx/conf.d
+    networks:
+      - nginx_network
+  app:
+    build: .
+    volumes:
+      - .dockervenv:/src/.venv
+      - .:/src
+    ports:
+      - 8000:8000  # ホストマシンのポート3000を、docker内のポート8000に接続する
+    networks:
+      - nginx_network
+  db:
+    image: mysql:8.0
+    platform: linux/x86_64  # M1 Macの場合必要
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'  # rootアカウントをパスワードなしで作成
+      MYSQL_DATABASE: 'demo'  # 初期データベースとしてdemoを設定
+      TZ: 'Asia/Tokyo'  # タイムゾーンを日本時間に設定
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password  # MySQL8.0ではデフォルトが"caching_sha2_password"で、ドライバが非対応のため変更
+    ports:
+      - 33306:3306  # ホストマシンのポート33306を、docker内のポート3306に接続する
+    networks:
+      - nginx_network
+volumes:
+  mysql_data:
+
+networks:
+  nginx_network:
+    driver: bridge
