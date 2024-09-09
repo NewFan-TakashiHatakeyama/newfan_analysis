@@ -8,8 +8,12 @@ async def create_db(uid):
     result = func_create_user_database(uid)
     return result
 
-@router.post("/calc_indicator")
-async def create_table(uid, data_name):
-    result = func_create_db_sqlite(uid, data_name)
+@router.post("/table")
+async def create_table(uid, table):
+    result = func_create_table(uid, table)
     return result
 
+@router.post("/calc_indicator")
+async def calc_indicator_kpi(uid, date_column, user_id_column, indicator_dic_list:list[dict[str, str]]):
+    result = func_calc_indicator_kpi(uid, date_column, user_id_column, indicator_dic_list)
+    return result
