@@ -107,7 +107,7 @@ def _func_period_calc(df: DataFrame,
                       amount_column: str,
                       axis=None):
 
-    if axis is not None:
+    if axis != "":
         calc = df[[period, axis, amount_column]].groupby([period, axis])
     else:
         calc = df[[period, amount_column]].groupby(period)
@@ -151,7 +151,7 @@ def func_calc_kpi(df,
     the name of the target KPI item, and the calculation method, and performs the calculation.
     Unlike normal KPI calculations, the necessary conditions are specified.
     """
-    if (terms_column is not None) & (terms is not None):
+    if (terms_column == "") & (terms == ""):
         if (type(terms_column) == list) & (type(terms) == list):
             for term_col, term in zip(terms_column, terms):
                 df = df[df[term_col] == term]
@@ -213,6 +213,7 @@ def func_calc_indicator(df, indicator_dic):
     indicator = func(df, period, input_column, method, terms_column, terms, axis)
     indicator["KPI"] = kpi
     indicator["Increase/Decrease"] = indicator["output"].diff() / np.append(1, indicator["output"].values[:-1])
+    indicator[period] = indicator[period].astype(str)
     return indicator
 
 
@@ -231,3 +232,10 @@ def func_calc_indicator_kpi(uid, date_column, user_id_column, indicator_dic_list
 
         output.to_sql("KPI_TREE", conn, index=False, if_exists='append')
 
+
+def func_get_mysql(uid):
+    DB_URL = f"mysql+mysqlconnector://root@db:3306/{uid}?charset=utf8"
+    engine = create_engine(DB_URL, echo=True)
+    with engine.begin() as conn:
+        df = pd.read_sql_query("SELECT * FROM KPI_TREE;", conn)
+    return df.to_json(orient='records', force_ascii=False)
